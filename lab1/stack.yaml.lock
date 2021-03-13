@@ -9,4 +9,39 @@ snapshots:
     sha256: aa48668f6c0d19a05f044e107e69221e9a49fb779f3230a60f0511924ee66f96
     url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/nightly/2020/5/1.yaml
     size: 520328
-packages: []
+packages:
+- original:
+    hackage: mysql-haskell-0.8.4.3
+  completed:
+    pantry-tree:
+      sha256: c974f4d4f24bb7e17d633301a442a0a5162d30e163cad618a961d61192b6debc
+      size: 1754
+    hackage: mysql-haskell-0.8.4.3@sha256:d3ca21ae8cc88670f8adb17c7cacb8bb770f1a58d60b5bff346d1f3fc843d98c,3489
+- original:
+    hackage: text-1.2.4.0
+  completed:
+    pantry-tree:
+      sha256: 3437b0a73ce2ae1a81aa8b3438d41a85981c00894cdbee0d6d6d6873046a5d5d
+      size: 7457
+    hackage: text-1.2.4.0@sha256:8c24450feb8e3bbb7ea3e17af24ef57e85db077c4bf53e5bcc345b283d1b1d5b,10081
+- original:
+    hackage: io-streams-1.5.2.0@sha256:d610cef25b73a7d80a9d40a1e21fba74e97d4c2f78e97f92f7a286fd8a6c8ab5,9836
+  completed:
+    pantry-tree:
+      sha256: d326ce043f718bdc9c31421d28f08442595c537d264f450a66a9400cd3c471e9
+      size: 3465
+    hackage: io-streams-1.5.2.0@sha256:d610cef25b73a7d80a9d40a1e21fba74e97d4c2f78e97f92f7a286fd8a6c8ab5,9836
+- original:
+    hackage: tcp-streams-1.0.1.1@sha256:35e9ecfa515797052f8c3c01834d2daebd5e93f3152c7fc98b32652bf6f0c052,2329
+  completed:
+    pantry-tree:
+      sha256: 572071fca40a0b6c4cc950d10277a6f12e83cf4846882b6ef83fcccaa2c18c45
+      size: 1004
+    hackage: tcp-streams-1.0.1.1@sha256:35e9ecfa515797052f8c3c01834d2daebd5e93f3152c7fc98b32652bf6f0c052,2329
+- original:
+    hackage: wire-streams-0.1.1.0@sha256:08816c7fa53b20f52e5c465252c106d9de8e6d9580ec0b6d9f000a34c7bcefc8,2130
+  completed:
+    pantry-tree:
+      sha256: c99a12bfcbeacc5da8f166fbed1eb105a45f08be1a3a071fe9f903b386b14e1d
+      size: 506
+    hackage: wire-streams-0.1.1.0@sha256:08816c7fa53b20f52e5c465252c106d9de8e6d9580ec0b6d9f000a34c7bcefc8,2130

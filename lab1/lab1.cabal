@@ -25,7 +25,9 @@ source-repository head
 
 library
   exposed-modules:
+      AuthorsTable
       MySQLConnector
+      UsersTable
   other-modules:
       Paths_lab1
   hs-source-dirs:

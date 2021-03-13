@@ -2,18 +2,17 @@
 module Main where
 
 import MySQLConnector 
+import AuthorsTable 
 
 main :: IO ()
 main = do
     conn <- connectDB 
 
-    vals <- getDBName conn
-    print vals
+    print =<< getDBName conn
 
     deployDB conn
     
-    vals <- showTables conn
-    print vals
+    print =<< showTables conn
 
     closeDB conn
 

@@ -19,9 +19,15 @@ connectDB =
 closeDB :: MySQLConn -> IO ()
 closeDB = close
 
+-- translate output results into list of values
+getRidOfStream :: IO ([ColumnDef], Streams.InputStream [MySQLValue]) -> IO [[MySQLValue]]
+getRidOfStream all = do
+    (defs, is) <- all
+    Streams.toList is
+
 -- get name of database
-getDBName :: MySQLConn -> IO ([ColumnDef], Streams.InputStream [MySQLValue])
-getDBName conn = query_ conn "SELECT DATABASE();"
+getDBName :: MySQLConn -> IO [[MySQLValue]]
+getDBName conn = getRidOfStream (query_ conn "SELECT DATABASE();")
 
 -- create tables if they doesn't exist
 deployDB :: MySQLConn -> IO [OK]
@@ -76,17 +82,17 @@ deployDB conn = executeMany_ conn
     \);"
 
 -- return list of tables
-showTables :: MySQLConn -> IO ([ColumnDef], Streams.InputStream [MySQLValue])
-showTables conn = query_ conn "SHOW TABLES;"
+showTables :: MySQLConn -> IO [[MySQLValue]]
+showTables conn = getRidOfStream (query_ conn "SHOW TABLES;")
 
 -- return describe table
-describeTable :: MySQLConn -> String  -> IO ([ColumnDef], Streams.InputStream [MySQLValue])
-describeTable conn tableName
-    | tableName == "users"      = query_ conn "DESCRIBE users;"
-    | tableName == "authors"    = query_ conn "DESCRIBE authors;"
-    | tableName == "resources"  = query_ conn "DESCRIBE resources;"
-    | tableName == "author_owns"    = query_ conn "DESCRIBE author_owns;"
-    | tableName == "user_owns"    = query_ conn "DESCRIBE user_owns;"
+describeTable :: MySQLConn -> String  -> IO [[MySQLValue]]
+describeTable conn tableName 
+    | tableName == "users"      = getRidOfStream (query_ conn "DESCRIBE users;")
+    | tableName == "authors"    = getRidOfStream (query_ conn "DESCRIBE authors;")
+    | tableName == "resources"  = getRidOfStream (query_ conn "DESCRIBE resources;")
+    | tableName == "author_owns"= getRidOfStream (query_ conn "DESCRIBE author_owns;")
+    | tableName == "user_owns"  = getRidOfStream (query_ conn "DESCRIBE user_owns;")
 
 -- delete table from database
 dropTable :: MySQLConn -> String -> IO OK
@@ -96,12 +102,6 @@ dropTable conn tableName
     | tableName == "resources"  = execute_ conn "DROP TABLE resources;"
     | tableName == "author_owns"    = execute_ conn "DROP TABLE author_owns;"
     | tableName == "user_owns"    = execute_ conn "DROP TABLE user_owns;"
-
--- translate output results into list of values
-getRidOfStream :: IO ([ColumnDef], Streams.InputStream [MySQLValue]) -> IO [[MySQLValue]]
-getRidOfStream all = do
-    (defs, is) <- all
-    Streams.toList is
 
 -- error status if object not exists
 errorOnExistence :: OK

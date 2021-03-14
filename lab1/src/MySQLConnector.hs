@@ -4,6 +4,7 @@ module MySQLConnector where
 import Data.Text as T ( Text )
 import Database.MySQL.Base
 import qualified System.IO.Streams as Streams
+import qualified Data.ByteString.Lazy.Char8 as BtSt ( pack )
 
 -- connect to database which is started by docker-compose
 connectDB :: IO MySQLConn
@@ -85,24 +86,84 @@ deployDB conn = executeMany_ conn
 showTables :: MySQLConn -> IO [[MySQLValue]]
 showTables conn = getRidOfStream (query_ conn "SHOW TABLES;")
 
+-- convert to query
+toQuery :: String -> Query
+toQuery = Query . BtSt.pack
+
 -- return describe table
 describeTable :: MySQLConn -> String  -> IO [[MySQLValue]]
-describeTable conn tableName 
-    | tableName == "users"      = getRidOfStream (query_ conn "DESCRIBE users;")
-    | tableName == "authors"    = getRidOfStream (query_ conn "DESCRIBE authors;")
-    | tableName == "resources"  = getRidOfStream (query_ conn "DESCRIBE resources;")
-    | tableName == "author_owns"= getRidOfStream (query_ conn "DESCRIBE author_owns;")
-    | tableName == "user_owns"  = getRidOfStream (query_ conn "DESCRIBE user_owns;")
+describeTable conn tableName = getRidOfStream (query_ conn (toQuery ("DESCRIBE " ++ tableName ++ ";")))
 
 -- delete table from database
 dropTable :: MySQLConn -> String -> IO OK
-dropTable conn tableName
-    | tableName == "users"      = execute_ conn "DROP TABLE users;"
-    | tableName == "authors"    = execute_ conn "DROP TABLE authors;"
-    | tableName == "resources"  = execute_ conn "DROP TABLE resources;"
-    | tableName == "author_owns"    = execute_ conn "DROP TABLE author_owns;"
-    | tableName == "user_owns"    = execute_ conn "DROP TABLE user_owns;"
+dropTable conn tableName = execute_ conn (toQuery ("DROP TABLE " ++ tableName ++";"))
 
 -- error status if object not exists
 errorOnExistence :: OK
 errorOnExistence = OK (-100) (-100) 0 0
+
+-- get all values from table
+getAllValues :: MySQLConn -> String -> IO [[MySQLValue]]
+getAllValues conn tableName = getRidOfStream ( query_ conn (toQuery("SELECT * FROM " ++ tableName ++ ";")))
+
+-- generate where query
+generateWhere :: [String] -> String
+generateWhere [] = ""
+generateWhere [x] = x ++ " = ?;"
+generateWhere (x:xs) = x ++ " = ? and " ++ generateWhere xs
+
+-- get any value by compare from table
+getValue :: MySQLConn -> String -> [String] -> [MySQLValue] -> IO [[MySQLValue]]
+getValue conn tableName fieldNames fieldValues =
+    getRidOfStream (query conn (
+        toQuery ("SELECT * FROM " ++ tableName ++ " WHERE " ++ generateWhere fieldNames))
+        fieldValues)
+
+-- update field for any table
+updateField :: MySQLConn -> String -> String -> String -> MySQLValue -> T.Text -> IO OK
+updateField conn tableName fieldToUpdate fieldToCompare updateValue compareValue = do
+    vals <- getValue conn tableName [fieldToCompare] [MySQLText compareValue]
+    if null vals
+    then return errorOnExistence
+    else execute conn (toQuery (
+        "UPDATE " ++ tableName ++ " \
+        \SET " ++ fieldToUpdate ++ " = ? \
+        \WHERE " ++ fieldToCompare ++ " = ?;"))
+        [updateValue, MySQLText compareValue]
+
+-- update field for key in any table
+updateKeyField :: MySQLConn -> String -> String -> T.Text -> T.Text -> IO OK
+updateKeyField conn tableName fieldToUpdate updateValue compareValue = do
+    vals <- getValue conn tableName [fieldToUpdate] [MySQLText compareValue]
+    valsNew <- getValue conn tableName [fieldToUpdate] [MySQLText updateValue]
+    if null vals || not (null valsNew)
+    then return errorOnExistence
+    else execute conn (toQuery (
+        "UPDATE " ++ tableName ++ " \
+        \SET " ++ fieldToUpdate ++ " = ? \
+        \WHERE " ++ fieldToUpdate ++ " = ?;"))
+        [MySQLText updateValue, MySQLText compareValue]
+
+
+-- generate where query
+generateInsert :: [String] -> String
+generateInsert [] = " "
+generateInsert [x] = x
+generateInsert (x:xs) = x ++ ", " ++ generateInsert xs
+
+generateInsertValues :: Int -> String
+generateInsertValues n
+    | n == 0 = " "
+    | n == 1 = "?"
+    | n > 1  = "?, " ++ generateInsertValues (n-1)
+
+-- add value to table
+addValue :: MySQLConn -> String -> [String] -> [MySQLValue] -> IO OK
+addValue conn tableName fieldNames fieldValues = do
+    vals <- getValue conn tableName [head fieldNames] [head fieldValues]
+    if null vals
+    then execute conn
+            (toQuery ("INSERT INTO " ++ tableName ++ " (" ++ generateInsert fieldNames ++ ") " ++
+                      "VALUES (" ++ generateInsertValues (length fieldValues) ++ ") ;"))
+            fieldValues
+    else return errorOnExistence

@@ -24,6 +24,8 @@ dependencies:
 - mysql-haskell == 0.8.4.3
 - io-streams == 1.5.2.0
 - text == 1.2.4.0
+- time == 1.9.3
+- bytestring == 0.10.10.0
 
 library:
   source-dirs: src

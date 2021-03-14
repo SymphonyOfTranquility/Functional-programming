@@ -25,6 +25,20 @@ packages:
       size: 7457
     hackage: text-1.2.4.0@sha256:8c24450feb8e3bbb7ea3e17af24ef57e85db077c4bf53e5bcc345b283d1b1d5b,10081
 - original:
+    hackage: time-1.9.3
+  completed:
+    pantry-tree:
+      sha256: a1043c1719491764f0fa37a1fd70d9451080548a41632fee88d8e1b8db4942d6
+      size: 6558
+    hackage: time-1.9.3@sha256:8f1b5448722a12a952248b356c9eb366e351226543d9086a2da71270522d5f45,5679
+- original:
+    hackage: bytestring-0.10.10.0
+  completed:
+    pantry-tree:
+      sha256: 3705db25ef7caf442697b8e6fc8d5250096c1d8b1908233985773fe0c0c1a97e
+      size: 2788
+    hackage: bytestring-0.10.10.0@sha256:6031d86e4fd6419ad2ea05ecc008188dd64ed6c18f09556c86dd4c80d2a5f626,8961
+- original:
     hackage: io-streams-1.5.2.0@sha256:d610cef25b73a7d80a9d40a1e21fba74e97d4c2f78e97f92f7a286fd8a6c8ab5,9836
   completed:
     pantry-tree:

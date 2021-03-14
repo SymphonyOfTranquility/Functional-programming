@@ -3,58 +3,35 @@ module UsersTable where
 
 import Data.Text as T ( Text )
 import Database.MySQL.Base
-import qualified System.IO.Streams as Streams
-import MySQLConnector (getRidOfStream, errorOnExistence)
+import MySQLConnector (updateField, updateKeyField, getAllValues, getValue, addValue)
 
+tableName :: String 
+tableName = "users"
 
 -- return list of all users
 getAllUsers :: MySQLConn -> IO [[MySQLValue ]]
-getAllUsers conn = getRidOfStream ( query_ conn "SELECT * FROM users;")
+getAllUsers conn = getAllValues conn tableName
 
 -- get user from table of users
 getUser :: MySQLConn -> T.Text -> IO  [[MySQLValue]]
-getUser conn email = getRidOfStream (query conn "SELECT * FROM users WHERE email = ?;" [MySQLText email])
+getUser conn email = getValue conn tableName ["email"] [MySQLText email]
 
 -- add new user to table of users
 addUser :: MySQLConn -> T.Text -> T.Text -> T.Text -> IO OK
-addUser conn username email password = do
-    vals <- getUser conn email
-    if null vals 
-    then execute conn
-            "INSERT INTO users(email, password, name) \
-            \VALUES (?, ?, ?) ;" [MySQLText email, MySQLText password, MySQLText username]
-    else return errorOnExistence
+addUser conn email username password = 
+        addValue conn tableName ["email", "name", "password"] [MySQLText email, MySQLText username, MySQLText password]
 
 -- update username in table of users
 updateUserName :: MySQLConn -> T.Text -> T.Text -> IO OK
-updateUserName conn email username = do
-    vals  <- getUser conn email
-    if null vals 
-    then return errorOnExistence
-    else execute conn
-            "UPDATE users \
-            \SET name = ? \
-            \WHERE email = ?;" [MySQLText username, MySQLText email]
+updateUserName conn email username = 
+        updateField conn tableName "name" "email" (MySQLText username) email
 
 -- update password in table of users
 updateUserPassword :: MySQLConn -> T.Text -> T.Text -> IO OK
-updateUserPassword conn email password = do
-    vals <- getUser conn email
-    if null vals 
-    then return errorOnExistence
-    else execute conn
-            "UPDATE users \
-            \SET password = ? \
-            \WHERE email = ?;" [MySQLText password, MySQLText email]
+updateUserPassword conn email password = 
+        updateField conn tableName "password" "email" (MySQLText password) email
 
 -- update email in table of users
 updateUserEmail :: MySQLConn -> T.Text -> T.Text -> IO OK
-updateUserEmail conn email newEmail = do
-    vals <- getUser conn email
-    valsNew <- getUser conn newEmail
-    if not (null vals) && null valsNew
-    then execute conn
-            "UPDATE users \
-            \SET email = ? \
-            \WHERE email = ?;" [MySQLText newEmail, MySQLText email]
-    else return errorOnExistence
+updateUserEmail conn email newEmail =
+        updateKeyField conn tableName "email" newEmail email

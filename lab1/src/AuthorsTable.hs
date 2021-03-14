@@ -42,6 +42,6 @@ updateAuthorEmail conn email newEmail =
 
 -- delete author from table
 deleteAuthor :: MySQLConn -> T.Text -> IO OK
-deleteAuthor conn email = deleteValue conn tableName "email" (MySQLText email)
+deleteAuthor conn email = deleteValue conn tableName ["email"] [MySQLText email]
 
     

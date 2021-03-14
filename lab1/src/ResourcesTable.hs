@@ -54,5 +54,4 @@ updateResourceAnnotation conn name annotation =
 
 -- delete resource from table
 deleteResource :: MySQLConn -> T.Text -> IO OK
-deleteResource conn name = deleteValue conn tableName "name" (MySQLText name)
-
+deleteResource conn name = deleteValue conn tableName ["name"] [MySQLText name]

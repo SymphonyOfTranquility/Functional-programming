@@ -168,7 +168,18 @@ addValue conn tableName fieldNames fieldValues = do
             fieldValues
     else return errorOnExistence
 
+-- add value for connective tables
+addValueConnective :: MySQLConn -> String -> [String] -> [MySQLValue] -> IO OK
+addValueConnective conn tableName fieldNames fieldValues = do
+    vals <- getValue conn tableName fieldNames fieldValues
+    if null vals
+    then execute conn
+            (toQuery ("INSERT INTO " ++ tableName ++ " (" ++ generateInsert fieldNames ++ ") " ++
+                      "VALUES (" ++ generateInsertValues (length fieldValues) ++ ") ;"))
+            fieldValues
+    else return errorOnExistence
+
 -- delete value from table
-deleteValue :: MySQLConn -> String -> String -> MySQLValue -> IO OK
-deleteValue conn tableName fieldName fieldValue = 
-    execute conn (toQuery ("DELETE FROM " ++ tableName ++ " WHERE " ++ fieldName ++ " = ?;")) [fieldValue]
+deleteValue :: MySQLConn -> String -> [String] -> [MySQLValue] -> IO OK
+deleteValue conn tableName fieldName = 
+    execute conn (toQuery ("DELETE FROM " ++ tableName ++ " WHERE " ++ generateWhere fieldName ++ ";"))

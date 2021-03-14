@@ -19,6 +19,12 @@ import qualified ResourcesTable as ResourceT
       updateResourceName, updateResourceType, updateResourceAnnotation, 
       deleteResource )
 
+import qualified AuthorOwnsTable as AuthorOwnT
+    ( getAllAuthorOwns, getAuthorOwn, getResourceManagedBy,
+      addAuthorResourceRecord,
+      deleteAuthor, deleteResource, deleteRecord      
+    )
+
 import Data.Time.Calendar as C 
 import MySQLConnector ( connectDB, getDBName, deployDB, closeDB, showTables ) 
 

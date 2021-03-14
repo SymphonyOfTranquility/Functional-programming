@@ -167,3 +167,8 @@ addValue conn tableName fieldNames fieldValues = do
                       "VALUES (" ++ generateInsertValues (length fieldValues) ++ ") ;"))
             fieldValues
     else return errorOnExistence
+
+-- delete value from table
+deleteValue :: MySQLConn -> String -> String -> MySQLValue -> IO OK
+deleteValue conn tableName fieldName fieldValue = 
+    execute conn (toQuery ("DELETE FROM " ++ tableName ++ " WHERE " ++ fieldName ++ " = ?;")) [fieldValue]

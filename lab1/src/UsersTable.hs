@@ -3,7 +3,7 @@ module UsersTable where
 
 import Data.Text as T ( Text )
 import Database.MySQL.Base
-import MySQLConnector (updateField, updateKeyField, getAllValues, getValue, addValue)
+import MySQLConnector (updateField, updateKeyField, getAllValues, getValue, addValue, deleteValue)
 
 tableName :: String 
 tableName = "users"
@@ -35,3 +35,7 @@ updateUserPassword conn email password =
 updateUserEmail :: MySQLConn -> T.Text -> T.Text -> IO OK
 updateUserEmail conn email newEmail =
         updateKeyField conn tableName "email" newEmail email
+
+-- delete user from table
+deleteUser :: MySQLConn -> T.Text -> IO OK
+deleteUser conn email = deleteValue conn tableName "email" (MySQLText email)

@@ -3,7 +3,7 @@ module AuthorsTable where
 
 import Data.Text as T ( Text )
 import Database.MySQL.Base
-import MySQLConnector (updateField, updateKeyField, getAllValues, getValue, addValue)
+import MySQLConnector (updateField, updateKeyField, getAllValues, getValue, addValue, deleteValue)
 
 tableName :: String 
 tableName = "authors"
@@ -35,9 +35,13 @@ updateAuthorSurname :: MySQLConn -> T.Text -> T.Text -> IO OK
 updateAuthorSurname conn email surname = 
     updateField conn tableName "surname" "email" (MySQLText surname) email
     
--- update email in table of users
+-- update email in table of authors
 updateAuthorEmail :: MySQLConn -> T.Text -> T.Text -> IO OK
 updateAuthorEmail conn email newEmail = 
     updateKeyField conn tableName "email" newEmail email
+
+-- delete author from table
+deleteAuthor :: MySQLConn -> T.Text -> IO OK
+deleteAuthor conn email = deleteValue conn tableName "email" (MySQLText email)
 
     

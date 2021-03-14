@@ -4,7 +4,7 @@ module ResourcesTable where
 import Data.Text as T ( Text )
 import Data.Time.Calendar as C ( Day )
 import Database.MySQL.Base
-import MySQLConnector (updateField, updateKeyField, getAllValues, getValue, addValue)
+import MySQLConnector (updateField, updateKeyField, getAllValues, getValue, addValue, deleteValue)
 import Data.Int (Int32)
 
 tableName :: String 
@@ -51,4 +51,8 @@ updateResourceType conn name newType =
 updateResourceAnnotation :: MySQLConn -> T.Text -> T.Text -> IO OK
 updateResourceAnnotation conn name annotation = 
     updateField conn tableName "annotation" "name" (MySQLText annotation) name
+
+-- delete resource from table
+deleteResource :: MySQLConn -> T.Text -> IO OK
+deleteResource conn name = deleteValue conn tableName "name" (MySQLText name)
 

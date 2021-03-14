@@ -40,4 +40,4 @@ deleteResource conn resourceId = deleteValue conn tableName ["resource"] [MySQLI
 deleteRecord :: MySQLConn -> Int32 -> Int32 -> IO OK
 deleteRecord conn authorId resourceId = 
     deleteValue conn tableName ["author", "resource"] 
-                               [MySQLInt32 resourceId, MySQLInt32 resourceId]
+                               [MySQLInt32 authorId, MySQLInt32 resourceId]

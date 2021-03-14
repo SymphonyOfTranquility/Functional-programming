@@ -29,6 +29,7 @@ library
       AuthorsTable
       MySQLConnector
       ResourcesTable
+      UserOwnsTable
       UsersTable
   other-modules:
       Paths_lab1

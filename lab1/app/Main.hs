@@ -25,7 +25,13 @@ import qualified AuthorOwnsTable as AuthorOwnT
       deleteAuthor, deleteResource, deleteRecord      
     )
 
-import Data.Time.Calendar as C 
+import qualified UserOwnsTable as UserOwnT
+    ( getAllUserOwns, getUserOwn, getResourceManagedBy,
+      addUserResourceRecord,
+      deleteUser, deleteResource, deleteRecord      
+    )
+
+import qualified Data.Time.Calendar as C ( Day, fromGregorian )
 import MySQLConnector ( connectDB, getDBName, deployDB, closeDB, showTables ) 
 
 main :: IO ()

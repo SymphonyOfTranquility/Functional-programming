@@ -1,41 +1,91 @@
 {-# LANGUAGE OverloadedStrings #-}
 module UsersTable where
 
-import Data.Text as T ( Text )
+import qualified Data.Text as T ( Text, pack )
 import Database.MySQL.Base
-import MySQLConnector (updateField, updateKeyField, getAllValues, getValue, addValue, deleteValue)
+import MySQLConnector
+import Data.Int (Int32)
+import qualified Text.PrettyPrint as TPrettyP ( ($+$), text, vcat, Doc, (<>), render )
+import Converter (mergeLists, myToInt32, myToString, genStruct, genMyLine, genRow )
 
-tableName :: String 
-tableName = "users"
+data UsersInfo = UsersInfo
+    { tableName :: String,
+      fieldNames :: [String],
+      ids :: [Int32],
+      emails :: [String],
+      passwords :: [String],
+      names :: [String]
+    }
+    deriving Show
 
--- return list of all users
-getAllUsers :: MySQLConn -> IO [[MySQLValue ]]
-getAllUsers conn = getAllValues conn tableName
+emptyUserStruct :: UsersInfo
+emptyUserStruct = UsersInfo "users" ["user_id", "email", "password", "name"] [] [] [] []
 
--- get user from table of users
-getUser :: MySQLConn -> T.Text -> IO  [[MySQLValue]]
-getUser conn email = getValue conn tableName ["email"] [MySQLText email]
+mergeAll :: UsersInfo -> [[String]]
+mergeAll tableInfo = mergeLists
+                        (mergeLists
+                            (mergeLists
+                                (mergeLists [] id (map show (ids tableInfo)) "" maxVal)
+                                id (emails tableInfo) "" maxVal)
+                            id (passwords tableInfo) "" maxVal)
+                        id (names tableInfo) "" maxVal
+                    where maxVal = max (length (ids tableInfo)) 
+                                        (max (length (emails tableInfo)) 
+                                            (max (length (passwords tableInfo))
+                                                    (length (names tableInfo))))
 
--- add new user to table of users
-addUser :: MySQLConn -> T.Text -> T.Text -> T.Text -> IO OK
-addUser conn email username password = 
-        addValue conn tableName ["email", "name", "password"] [MySQLText email, MySQLText username, MySQLText password]
+instance Table UsersInfo where
+    getName tableInfo = tableName tableInfo
 
--- update username in table of users
-updateUserName :: MySQLConn -> T.Text -> T.Text -> IO OK
-updateUserName conn email username = 
-        updateField conn tableName "name" "email" (MySQLText username) email
+    getFieldNames tableInfo =
+                        [fieldNames tableInfo !! 0 | not (null (ids tableInfo))] ++
+                        [fieldNames tableInfo !! 1 | not (null (emails tableInfo))] ++
+                        [fieldNames tableInfo !! 2 | not (null (passwords tableInfo))] ++
+                        [fieldNames tableInfo !! 3 | not (null (names tableInfo))]
 
--- update password in table of users
-updateUserPassword :: MySQLConn -> T.Text -> T.Text -> IO OK
-updateUserPassword conn email password = 
-        updateField conn tableName "password" "email" (MySQLText password) email
+    getFieldValues (UsersInfo _ _ ids emails names passwords) =
+        map MySQLInt32 ids ++
+        map (MySQLText . T.pack) emails ++
+        map (MySQLText . T.pack) passwords ++
+        map (MySQLText . T.pack) names
 
--- update email in table of users
-updateUserEmail :: MySQLConn -> T.Text -> T.Text -> IO OK
-updateUserEmail conn email newEmail =
-        updateKeyField conn tableName "email" newEmail email
+    getMainFieldTables tableInfo =  UsersInfo {
+            tableName = tableName tableInfo,
+            fieldNames = fieldNames tableInfo,
+            ids = [],
+            emails = emails tableInfo,
+            passwords = [],
+            names = []
+        }
 
--- delete user from table
-deleteUser :: MySQLConn -> T.Text -> IO OK
-deleteUser conn email = deleteValue conn tableName ["email"] [MySQLText email]
+    fromMySQLValues res = do
+        vals <- res
+        return (UsersInfo {
+            tableName = tableName emptyUserStruct,
+            fieldNames = fieldNames emptyUserStruct,
+            ids = map myToInt32 (genStruct vals 0),
+            emails = map myToString (genStruct vals 1),
+            passwords = map myToString (genStruct vals 2),
+            names = map myToString (genStruct vals 3)
+        })
+
+    isEmpty tableInfo = null (ids tableInfo) || null (emails tableInfo) ||
+                        null (names tableInfo) || null (passwords tableInfo)
+
+    len tableInfo = fromEnum (not (null (ids tableInfo))) +
+                    fromEnum (not (null (emails tableInfo))) +
+                    fromEnum (not (null (names tableInfo))) +
+                    fromEnum (not (null (passwords tableInfo)))
+
+    printInfo tableInfo _ = putStrLn (TPrettyP.render draw ++ "\n")
+        where
+            draw :: TPrettyP.Doc
+            draw = TPrettyP.text header
+                TPrettyP.$+$
+                    TPrettyP.text (genMyLine (length header +
+                                              7 * length (filter (== '\t') header)))
+                TPrettyP.$+$
+                    TPrettyP.vcat (map row (mergeAll tableInfo))
+                where
+                    row t = TPrettyP.text( genRow (fieldNames tableInfo) t id)
+                    header = genRow (fieldNames tableInfo) (fieldNames tableInfo) id

@@ -39,6 +39,10 @@ extra-deps:
   - text-1.2.4.0
   - time-1.9.3
   - bytestring-0.10.10.0
+  - haskeline-0.8.1.1
+  - utf8-string-1.0.2
+  - binary-0.8.7.0
+  - pretty-1.1.3.6
   - io-streams-1.5.2.0@sha256:d610cef25b73a7d80a9d40a1e21fba74e97d4c2f78e97f92f7a286fd8a6c8ab5,9836
   - tcp-streams-1.0.1.1@sha256:35e9ecfa515797052f8c3c01834d2daebd5e93f3152c7fc98b32652bf6f0c052,2329
   - wire-streams-0.1.1.0@sha256:08816c7fa53b20f52e5c465252c106d9de8e6d9580ec0b6d9f000a34c7bcefc8,2130 

@@ -39,6 +39,34 @@ packages:
       size: 2788
     hackage: bytestring-0.10.10.0@sha256:6031d86e4fd6419ad2ea05ecc008188dd64ed6c18f09556c86dd4c80d2a5f626,8961
 - original:
+    hackage: haskeline-0.8.1.1
+  completed:
+    pantry-tree:
+      sha256: 38e3a32dea678bed9da7ae3a70fa371e130ea2c8666ab7b836172f6323d9f2ea
+      size: 2955
+    hackage: haskeline-0.8.1.1@sha256:21c0d6bd9f36a8b0cfbceab30820f4fe4ac72535c4d2cdf217123d816a4e494e,5818
+- original:
+    hackage: utf8-string-1.0.2
+  completed:
+    pantry-tree:
+      sha256: 0863c3c9b6ee24dd38873c62e38ac46dd50aff2ea6b362beadf7f9b4a273c75f
+      size: 601
+    hackage: utf8-string-1.0.2@sha256:79416292186feeaf1f60e49ac5a1ffae9bf1b120e040a74bf0e81ca7f1d31d3f,1538
+- original:
+    hackage: binary-0.8.7.0
+  completed:
+    pantry-tree:
+      sha256: 35e44b6d3ccf0d56fc5407dc3f0895e74696a66da189afbd65973c95743f5e25
+      size: 1976
+    hackage: binary-0.8.7.0@sha256:ae3e6cca723ac55c54bbb3fa771bcf18142bc727afd57818e66d6ee6c8044f12,7705
+- original:
+    hackage: pretty-1.1.3.6
+  completed:
+    pantry-tree:
+      sha256: 9f62289797600d7121862309c306a3b495f872dccfe3d5c4bdeaf85d5ad12dd7
+      size: 1308
+    hackage: pretty-1.1.3.6@sha256:e16ffc733e816cfc09e99cc7f2398805f1f4c872d238a6b81668b5527284b382,2482
+- original:
     hackage: io-streams-1.5.2.0@sha256:d610cef25b73a7d80a9d40a1e21fba74e97d4c2f78e97f92f7a286fd8a6c8ab5,9836
   completed:
     pantry-tree:

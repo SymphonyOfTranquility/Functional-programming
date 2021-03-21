@@ -90,21 +90,13 @@ showTables conn = getRidOfStream (query_ conn "SHOW TABLES;")
 toQuery :: String -> Query
 toQuery = Query . BtSt.pack
 
--- return describe table
-describeTable :: MySQLConn -> String  -> IO [[MySQLValue]]
-describeTable conn tableName = getRidOfStream (query_ conn (toQuery ("DESCRIBE " ++ tableName ++ ";")))
-
--- delete table from database
-dropTable :: MySQLConn -> String -> IO OK
-dropTable conn tableName = execute_ conn (toQuery ("DROP TABLE " ++ tableName ++";"))
-
 -- error status if object not exists
-errorOnExistence :: OK
-errorOnExistence = OK (-100) (-100) 0 0
+errorOnNotExistence :: OK
+errorOnNotExistence = OK (-100) (-100) 0 0
 
--- get all values from table
-getAllValues :: MySQLConn -> String -> IO [[MySQLValue]]
-getAllValues conn tableName = getRidOfStream ( query_ conn (toQuery("SELECT * FROM " ++ tableName ++ ";")))
+-- error status if object already exists
+errorOnExistence :: OK
+errorOnExistence = OK (-200) (-200) 0 0
 
 -- generate where query
 generateWhere :: [String] -> String
@@ -112,38 +104,11 @@ generateWhere [] = ""
 generateWhere [x] = x ++ " = ?;"
 generateWhere (x:xs) = x ++ " = ? and " ++ generateWhere xs
 
--- get any value by compare from table
-getValue :: MySQLConn -> String -> [String] -> [MySQLValue] -> IO [[MySQLValue]]
-getValue conn tableName fieldNames fieldValues =
-    getRidOfStream (query conn (
-        toQuery ("SELECT * FROM " ++ tableName ++ " WHERE " ++ generateWhere fieldNames))
-        fieldValues)
-
--- update field for any table
-updateField :: MySQLConn -> String -> String -> String -> MySQLValue -> T.Text -> IO OK
-updateField conn tableName fieldToUpdate fieldToCompare updateValue compareValue = do
-    vals <- getValue conn tableName [fieldToCompare] [MySQLText compareValue]
-    if null vals
-    then return errorOnExistence
-    else execute conn (toQuery (
-        "UPDATE " ++ tableName ++ " \
-        \SET " ++ fieldToUpdate ++ " = ? \
-        \WHERE " ++ fieldToCompare ++ " = ?;"))
-        [updateValue, MySQLText compareValue]
-
--- update field for key in any table
-updateKeyField :: MySQLConn -> String -> String -> T.Text -> T.Text -> IO OK
-updateKeyField conn tableName fieldToUpdate updateValue compareValue = do
-    vals <- getValue conn tableName [fieldToUpdate] [MySQLText compareValue]
-    valsNew <- getValue conn tableName [fieldToUpdate] [MySQLText updateValue]
-    if null vals || not (null valsNew)
-    then return errorOnExistence
-    else execute conn (toQuery (
-        "UPDATE " ++ tableName ++ " \
-        \SET " ++ fieldToUpdate ++ " = ? \
-        \WHERE " ++ fieldToUpdate ++ " = ?;"))
-        [MySQLText updateValue, MySQLText compareValue]
-
+-- generate where query
+generateSet :: [String] -> String
+generateSet [] = ""
+generateSet [x] = x ++ " = ?"
+generateSet (x:xs) = x ++ " = ?, " ++ generateWhere xs
 
 -- generate where query
 generateInsert :: [String] -> String
@@ -157,29 +122,73 @@ generateInsertValues n
     | n == 1 = "?"
     | n > 1  = "?, " ++ generateInsertValues (n-1)
 
--- add value to table
-addValue :: MySQLConn -> String -> [String] -> [MySQLValue] -> IO OK
-addValue conn tableName fieldNames fieldValues = do
-    vals <- getValue conn tableName [head fieldNames] [head fieldValues]
-    if null vals
-    then execute conn
-            (toQuery ("INSERT INTO " ++ tableName ++ " (" ++ generateInsert fieldNames ++ ") " ++
-                      "VALUES (" ++ generateInsertValues (length fieldValues) ++ ") ;"))
-            fieldValues
-    else return errorOnExistence
+class Table a where
+    getName :: a -> String 
+    getFieldNames :: a -> [String] 
+    getFieldValues :: a -> [MySQLValue]
+    getMainFieldTables :: a -> a
+    fromMySQLValues :: IO [[MySQLValue]] -> IO a
+    isEmpty :: a -> Bool    
+    len :: a -> Int
+    printInfo :: a -> MySQLConn -> IO ()
 
--- add value for connective tables
-addValueConnective :: MySQLConn -> String -> [String] -> [MySQLValue] -> IO OK
-addValueConnective conn tableName fieldNames fieldValues = do
-    vals <- getValue conn tableName fieldNames fieldValues
-    if null vals
-    then execute conn
-            (toQuery ("INSERT INTO " ++ tableName ++ " (" ++ generateInsert fieldNames ++ ") " ++
-                      "VALUES (" ++ generateInsertValues (length fieldValues) ++ ") ;"))
-            fieldValues
-    else return errorOnExistence
+    -- delete table from database
+    drop :: a -> MySQLConn -> IO OK
+    drop tableInfo conn = execute_ conn (toQuery ("DROP TABLE " ++ getName tableInfo ++ ";"))
 
--- delete value from table
-deleteValue :: MySQLConn -> String -> [String] -> [MySQLValue] -> IO OK
-deleteValue conn tableName fieldName = 
-    execute conn (toQuery ("DELETE FROM " ++ tableName ++ " WHERE " ++ generateWhere fieldName ++ ";"))
+    -- get all values from table
+    getAllValues :: a -> MySQLConn -> IO a
+    getAllValues tableInfo conn = 
+        fromMySQLValues (getRidOfStream ( query_ conn (toQuery("SELECT * FROM " ++ getName tableInfo ++ ";"))))
+
+    -- get any value by compare from table
+    getValue :: a -> MySQLConn -> IO a 
+    getValue tableInfo conn = 
+        fromMySQLValues (getRidOfStream (query conn (
+            toQuery ("SELECT * FROM " ++ getName tableInfo ++ 
+                     " WHERE " ++ generateWhere (getFieldNames tableInfo)))
+            (getFieldValues tableInfo)))
+
+    -- update field for any table
+    updateField :: a -> a -> MySQLConn -> IO OK
+    updateField updateInfo compareInfo conn = do
+        vals <- getValue compareInfo conn
+        if isEmpty vals
+        then return errorOnNotExistence
+        else execute conn (toQuery (
+            "UPDATE " ++ getName updateInfo ++ " \
+            \SET " ++ generateSet (getFieldNames updateInfo) ++ " \
+            \WHERE " ++ generateWhere (getFieldNames compareInfo) ++";"))
+            (getFieldValues updateInfo ++ getFieldValues compareInfo)
+
+    -- update field for key in any table
+    updateKeyField :: a -> a -> MySQLConn -> IO OK
+    updateKeyField updateInfo compareInfo conn = do
+        vals <- getValue compareInfo conn
+        valsNew <- getValue updateInfo conn
+        if isEmpty vals || not (isEmpty valsNew)
+        then return errorOnNotExistence
+        else execute conn (toQuery (
+            "UPDATE " ++ getName updateInfo ++ " \
+            \SET " ++ generateSet (getFieldNames updateInfo) ++ " \
+            \WHERE " ++ generateWhere (getFieldNames compareInfo) ++";"))
+            (getFieldValues updateInfo ++ getFieldValues compareInfo)
+
+    -- add value to table
+    addValue :: a -> MySQLConn -> IO OK
+    addValue tableInfo conn = do
+        vals <- getValue (getMainFieldTables tableInfo) conn        
+        if isEmpty vals
+        then execute conn
+                (toQuery ("INSERT INTO " ++ getName tableInfo ++ 
+                            " (" ++ generateInsert (getFieldNames tableInfo) ++ ") " ++
+                        "VALUES (" ++ generateInsertValues (len tableInfo) ++ ") ;"))
+                (getFieldValues tableInfo)
+        else return errorOnExistence
+
+    -- delete value from table
+    deleteValue :: a -> MySQLConn -> IO OK
+    deleteValue tableInfo conn = 
+        execute conn (toQuery ("DELETE FROM " ++ getName tableInfo ++ 
+                                " WHERE " ++ generateWhere (getFieldNames tableInfo) ++ ";")) 
+                                (getFieldValues tableInfo)

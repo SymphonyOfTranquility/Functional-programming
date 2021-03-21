@@ -1,57 +1,154 @@
 {-# LANGUAGE OverloadedStrings #-}
 module ResourcesTable where
 
-import Data.Text as T ( Text )
-import Data.Time.Calendar as C ( Day )
+import qualified Data.Text as T ( Text, pack )
 import Database.MySQL.Base
-import MySQLConnector (updateField, updateKeyField, getAllValues, getValue, addValue, deleteValue)
+import Data.Time.Calendar as C ( Day )
+import MySQLConnector
 import Data.Int (Int32)
+import qualified Text.PrettyPrint as TPrettyP ( ($+$), text, vcat, Doc, (<>), render )
+import Converter (mergeLists, myToInt32, myToString, myToDay, genStruct, genMyLine, genRow )
 
-tableName :: String 
-tableName = "resources"
+data ResourcesInfo = ResourcesInfo
+    { tableName :: String,
+      fieldNames :: [String],
+      ids :: [Int32],
+      names :: [String],
+      types :: [String],
+      annotations :: [String],
+      links :: [String],
+      purposes :: [String],
+      openDate :: [C.Day],
+      usageTime :: [Int32],
+      rules :: [String],
+      statistics :: [Int32]
+    }
+    deriving Show
 
--- return list of all authors
-getAllResources :: MySQLConn -> IO [[MySQLValue]]
-getAllResources conn = getAllValues conn tableName
+emptyResourceStruct :: ResourcesInfo
+emptyResourceStruct = ResourcesInfo "resources" 
+    ["resource_id", "name", "type", "annotation", "link", "purpose", 
+        "open_date", "usage_time", "rules", "statistics"] 
+            [] [] [] [] [] [] [] [] [] []
 
--- get resource from table of resources by name
-getResourceByName :: MySQLConn -> T.Text -> IO [[MySQLValue]]
-getResourceByName conn name = getValue conn tableName ["name"] [MySQLText name]
+mergeAll :: ResourcesInfo -> [[String]]
+mergeAll tableInfo = mergeLists
+    (mergeLists
+      (mergeLists
+        (mergeLists
+          (mergeLists
+            (mergeLists
+              (mergeLists
+                (mergeLists
+                  (mergeLists
+                    (mergeLists [] id (map show (ids tableInfo)) "" maxVal)
+                    id (names tableInfo) "" maxVal)
+                  id (types tableInfo) "" maxVal)
+                id (annotations tableInfo) "" maxVal)
+              id (links tableInfo) "" maxVal)
+            id (purposes tableInfo) "" maxVal)
+          id (map show (openDate tableInfo)) "" maxVal)
+        id (map show (usageTime tableInfo)) "" maxVal)
+      id (rules tableInfo) "" maxVal)
+    id (map show (statistics tableInfo)) "" maxVal
+    where maxVal = max (length (ids tableInfo)) 
+            (max (length (names tableInfo)) 
+              (max (length (types tableInfo))
+                (max (length (annotations tableInfo))
+                  (max (length (links tableInfo))
+                    (max (length (types tableInfo))
+                      (max (length (purposes tableInfo))
+                        (max (length (openDate tableInfo))
+                          (max (length (usageTime tableInfo))
+                            (max (length (rules tableInfo))
+                                 (length (statistics tableInfo)))))))))))
+                    
 
--- get resource from table of resources by link
-getResourceByLink :: MySQLConn -> T.Text -> IO [[MySQLValue]]
-getResourceByLink conn link =  getValue conn tableName ["link"] [MySQLText link]
+instance Table ResourcesInfo where
+    getName tableInfo = tableName tableInfo
 
--- get resource from table of resources by id
-getResourceById :: MySQLConn -> Int32 -> IO [[MySQLValue]]
-getResourceById conn resourceId =  getValue conn tableName ["resource_id"] [MySQLInt32 resourceId] 
+    getFieldNames tableInfo =
+                        [fieldNames tableInfo !! 0 | not (null (ids tableInfo))] ++
+                        [fieldNames tableInfo !! 1 | not (null (names tableInfo))] ++
+                        [fieldNames tableInfo !! 2 | not (null (types tableInfo))] ++
+                        [fieldNames tableInfo !! 3 | not (null (annotations tableInfo))] ++
+                        [fieldNames tableInfo !! 4 | not (null (links tableInfo))] ++
+                        [fieldNames tableInfo !! 5 | not (null (purposes tableInfo))] ++
+                        [fieldNames tableInfo !! 6 | not (null (openDate tableInfo))] ++
+                        [fieldNames tableInfo !! 7 | not (null (usageTime tableInfo))] ++
+                        [fieldNames tableInfo !! 8 | not (null (rules tableInfo))] ++
+                        [fieldNames tableInfo !! 9 | not (null (statistics tableInfo))]
 
--- get resources from table of resources by type
-getResourceByType :: MySQLConn -> T.Text -> IO [[MySQLValue]]
-getResourceByType conn resourceType =  getValue conn tableName ["type"] [MySQLText resourceType] 
+    getFieldValues (ResourcesInfo _ _ ids names typeId annotation link purpose 
+            openDate usageTime rules statistics) =
+        map MySQLInt32 ids ++
+        map (MySQLText . T.pack) names ++
+        map (MySQLText . T.pack) typeId ++
+        map (MySQLText . T.pack) annotation ++
+        map (MySQLText . T.pack) link ++
+        map (MySQLText . T.pack) purpose ++
+        map MySQLDate openDate ++
+        map MySQLInt32 usageTime ++
+        map (MySQLText . T.pack) rules ++
+        map MySQLInt32 statistics
 
--- add resource to table of resources
-addResource :: MySQLConn -> T.Text -> T.Text -> T.Text -> T.Text -> T.Text -> C.Day -> Int32 -> T.Text -> Int32 -> IO OK
-addResource conn name resourceType annotation link purpose openDate usageTime rules statistics = 
-    addValue conn tableName ["link", "name", "type", "annotation", "purpose", "open_date", "usage_time", "rules", "statistics"] 
-                            [MySQLText link, MySQLText name, MySQLText resourceType, MySQLText annotation, MySQLText purpose,
-                             MySQLDate openDate, MySQLInt32 usageTime, MySQLText rules, MySQLInt32 statistics]
-    
--- update name in table of resources
-updateResourceName :: MySQLConn -> T.Text -> T.Text -> IO OK
-updateResourceName conn name newName = 
-    updateKeyField conn tableName "name" newName name
+    getMainFieldTables tableInfo = ResourcesInfo {
+            tableName = tableName tableInfo,
+            fieldNames = fieldNames tableInfo,
+            ids = [],
+            names = names tableInfo,
+            types = [],
+            annotations = [],
+            links = [],
+            purposes = [],
+            openDate = [],
+            usageTime = [],
+            rules = [],
+            statistics = []
+        }
 
--- update type in table of resources
-updateResourceType :: MySQLConn -> T.Text -> T.Text -> IO OK
-updateResourceType conn name newType = 
-    updateField conn tableName "type" "name" (MySQLText newType) name
+    fromMySQLValues res = do
+        vals <- res
+        return (ResourcesInfo {
+            tableName   = tableName emptyResourceStruct,
+            fieldNames  = fieldNames emptyResourceStruct,
+            ids         = map myToInt32 (genStruct vals 0),
+            names       = map myToString (genStruct vals 1),
+            types       = map myToString (genStruct vals 2),
+            annotations = map myToString (genStruct vals 3),
+            links       = map myToString (genStruct vals 4),
+            purposes    = map myToString (genStruct vals 5),
+            openDate    = map myToDay (genStruct vals 6),
+            usageTime   = map myToInt32 (genStruct vals 7),
+            rules       = map myToString (genStruct vals 8),
+            statistics  = map myToInt32 (genStruct vals 9)
+        })
 
--- update type in table of resources
-updateResourceAnnotation :: MySQLConn -> T.Text -> T.Text -> IO OK
-updateResourceAnnotation conn name annotation = 
-    updateField conn tableName "annotation" "name" (MySQLText annotation) name
+    isEmpty tableInfo = null (ids tableInfo) || null (names tableInfo) || null (types tableInfo) || 
+                        null (annotations tableInfo) || null (links tableInfo) || null (purposes tableInfo) || 
+                        null (openDate tableInfo) || null (usageTime tableInfo) || null (rules tableInfo) || 
+                        null (statistics tableInfo)
 
--- delete resource from table
-deleteResource :: MySQLConn -> T.Text -> IO OK
-deleteResource conn name = deleteValue conn tableName ["name"] [MySQLText name]
+    len tableInfo = fromEnum (not (null (ids tableInfo))) +
+                    fromEnum (not (null (names tableInfo))) +
+                    fromEnum (not (null (types tableInfo))) +
+                    fromEnum (not (null (annotations tableInfo))) +
+                    fromEnum (not (null (links tableInfo))) +
+                    fromEnum (not (null (purposes tableInfo))) +
+                    fromEnum (not (null (openDate tableInfo))) +
+                    fromEnum (not (null (usageTime tableInfo))) +
+                    fromEnum (not (null (rules tableInfo))) +
+                    fromEnum (not (null (statistics tableInfo)))
+
+    printInfo tableInfo _ = putStrLn (TPrettyP.render draw ++ "\n")
+        where
+            draw :: TPrettyP.Doc
+            draw = TPrettyP.text header
+                TPrettyP.$+$
+                    TPrettyP.text (genMyLine (length header +
+                                              4 * length (filter (== '\t') header)))
+                TPrettyP.$+$
+                    TPrettyP.vcat (map row (mergeAll tableInfo))
+                where
+                    row t = TPrettyP.text( genRow (fieldNames tableInfo) t id)
+                    header = genRow (fieldNames tableInfo) (fieldNames tableInfo) id

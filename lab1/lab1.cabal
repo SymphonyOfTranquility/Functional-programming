@@ -28,7 +28,6 @@ library
       AuthorsTable
       AuthorsToResources
       Converter
-      Main
       MySQLConnector
       ResourcesTable
       UserInteraction

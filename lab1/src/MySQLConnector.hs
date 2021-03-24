@@ -138,7 +138,7 @@ class Table a where
 
     -- get all values from table
     getAllValues :: a -> MySQLConn -> IO a
-    getAllValues tableInfo conn = 
+    getAllValues tableInfo conn =
         fromMySQLValues (getRidOfStream ( query_ conn (toQuery("SELECT * FROM " ++ getName tableInfo ++ ";"))))
 
     -- get any value by compare from table
@@ -166,13 +166,15 @@ class Table a where
     updateKeyField updateInfo compareInfo conn = do
         vals <- getValue compareInfo conn
         valsNew <- getValue updateInfo conn
-        if isEmpty vals || not (isEmpty valsNew)
+        if isEmpty vals
         then return errorOnNotExistence
-        else execute conn (toQuery (
-            "UPDATE " ++ getName updateInfo ++ " \
-            \SET " ++ generateSet (getFieldNames updateInfo) ++ " \
-            \WHERE " ++ generateWhere (getFieldNames compareInfo) ++";"))
-            (getFieldValues updateInfo ++ getFieldValues compareInfo)
+        else if not (isEmpty valsNew)
+            then return errorOnExistence
+            else execute conn (toQuery (
+                "UPDATE " ++ getName updateInfo ++ " \
+                \SET " ++ generateSet (getFieldNames updateInfo) ++ " \
+                \WHERE " ++ generateWhere (getFieldNames compareInfo) ++";"))
+                (getFieldValues updateInfo ++ getFieldValues compareInfo)
 
     -- add value to table
     addValue :: a -> MySQLConn -> IO OK

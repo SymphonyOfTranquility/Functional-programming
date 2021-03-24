@@ -39,6 +39,20 @@ getUserEmail value conn = do
     }) conn
     return (head (UT.emails res))
 
+getUserId :: String -> MySQLConn -> IO Int32
+getUserId value conn = do
+    res <- getValue (UT.UsersInfo {
+            UT.tableName = UT.tableName UT.emptyUserStruct,
+            UT.fieldNames = UT.fieldNames UT.emptyUserStruct,
+            UT.ids = [],
+            UT.emails = [value],
+            UT.passwords = [],
+            UT.names = []
+    }) conn
+    if not (null (UT.ids res))
+        then return (head (UT.ids res))
+        else return (-1)
+
 getResourceName :: Int32 -> MySQLConn -> IO String
 getResourceName value conn = do
     res <- getValue (RT.ResourcesInfo {

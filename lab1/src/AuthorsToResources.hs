@@ -37,6 +37,20 @@ getAuthorEmail value conn = do
     }) conn
     return (head (AT.emails res))
 
+getAuthorId :: String -> MySQLConn -> IO Int32
+getAuthorId value conn = do
+    res <- getValue (AT.AuthorsInfo  {
+            AT.tableName = AT.tableName AT.emptyAuthorStruct,
+            AT.fieldNames = AT.fieldNames AT.emptyAuthorStruct,
+            AT.ids = [],
+            AT.names = [],
+            AT.surnames = [],
+            AT.emails = [value]
+    }) conn
+    if not (null (AT.ids res))
+        then return (head (AT.ids res))
+        else return (-1)
+
 getResourceName :: Int32 -> MySQLConn -> IO String
 getResourceName value conn = do
     res <- getValue (RT.ResourcesInfo {
@@ -54,6 +68,26 @@ getResourceName value conn = do
             RT.statistics = []
     }) conn
     return (head (RT.names res))
+
+getResourceId :: String -> MySQLConn -> IO Int32
+getResourceId value conn = do
+    res <- getValue (RT.ResourcesInfo {
+            RT.tableName = RT.tableName RT.emptyResourceStruct,
+            RT.fieldNames = RT.fieldNames RT.emptyResourceStruct,
+            RT.ids = [],
+            RT.names = [value],
+            RT.types = [],
+            RT.annotations = [],
+            RT.links = [],
+            RT.purposes = [],
+            RT.openDate = [],
+            RT.usageTime = [],
+            RT.rules = [],
+            RT.statistics = []
+    }) conn
+    if not (null (RT.ids res))
+        then return (head (RT.ids res))
+        else return (-1)
 
 listIdsToListVals :: [Int32] -> MySQLConn -> (Int32 -> MySQLConn -> IO String) -> IO [String]
 listIdsToListVals [] conn func = return []

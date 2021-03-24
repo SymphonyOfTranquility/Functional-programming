@@ -43,7 +43,7 @@ instance Table UsersInfo where
                         [fieldNames tableInfo !! 2 | not (null (passwords tableInfo))] ++
                         [fieldNames tableInfo !! 3 | not (null (names tableInfo))]
 
-    getFieldValues (UsersInfo _ _ ids emails names passwords) =
+    getFieldValues (UsersInfo _ _ ids emails passwords names) =
         map MySQLInt32 ids ++
         map (MySQLText . T.pack) emails ++
         map (MySQLText . T.pack) passwords ++

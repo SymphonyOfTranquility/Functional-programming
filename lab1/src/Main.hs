@@ -1,36 +1,22 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import MySQLConnector ( connectDB, deployDB, closeDB, getDBName, Table (getAllValues, getValue, printInfo, addValue, deleteValue) ) 
-import qualified UsersTable as UT
-    ( UsersInfo(UsersInfo, tableName, fieldNames), emptyUserStruct ) 
-import qualified AuthorsTable as AT
-    ( AuthorsInfo(AuthorsInfo, ids, names, surnames, emails, tableName, fieldNames),
-      emptyAuthorStruct ) 
-
-import qualified ResourcesTable as RT
-    ( ResourcesInfo(ResourcesInfo, ids, names, types, annotations,
-                    links, purposes, openDate, usageTime, rules, statistics, tableName,
-                    fieldNames),
-      emptyResourceStruct ) 
-import Data.Time.Calendar as C ( Day, fromGregorian )
-import qualified AuthorsToResources as A2RT
-    ( AuthorToResources(AuthorToResources, fieldNames, ids, authorIds,
-                        resourceIds, tableName),
-      emptyAuthorToResourceStruct )
-import UsersToResources
--- import qualified UserInteraction as UI ( doAction )
+import MySQLConnector ( connectDB, deployDB, closeDB, getDBName, Table (getAllValues, getValue, printInfo, addValue, deleteValue, drop) )
+import qualified UserInteraction as UI ( doAction, dropAll )
 
 
 main :: IO ()
 main = do
 
-    conn <- connectDB 
+    conn <- connectDB
     deployDB conn
 
     print =<< getDBName conn
-    -- UI.doAction conn
 
+    UI.doAction conn
+    -- UI.dropAll conn
+    
+    closeDB conn
     {-
     let userInfo = UsersInfo 
                     (tableName emptyUserStruct) 
@@ -95,19 +81,20 @@ main = do
     res <- getAllValues authorToResource conn
     printInfo res conn
     -}
-
-    let userToResource = UserToResources {
-            tableName = tableName emptyUserToResourceStruct ,
-            fieldNames = fieldNames emptyUserToResourceStruct ,
-            ids = [],
-            userIds = [],
-            resourceIds = [],
-            usageStart = []
+    {-
+    let userToResource = U2RT.UserToResources {
+            U2RT.tableName = U2RT.tableName U2RT.emptyUserToResourceStruct ,
+            U2RT.fieldNames = U2RT.fieldNames U2RT.emptyUserToResourceStruct ,
+            U2RT.ids = [],
+            U2RT.userIds = [],
+            U2RT.resourceIds = [],
+            U2RT.usageStart = []
         }
 
     res <- getAllValues userToResource conn
     printInfo res conn
-    closeDB conn
 
-  
+    -}
+
+
 

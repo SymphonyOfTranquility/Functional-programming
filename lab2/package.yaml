@@ -1,0 +1,51 @@
+name:                lab2
+version:             0.1.0.0
+github:              "SymphonyOfTranquility/Functional-programming"
+license:             BSD3
+author:              "SymphonyOfTranquility"
+maintainer:          "example@example.com"
+copyright:           "2021 SymphonyOfTranquility"
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Web
+
+# To avoid duplicated efforts in documentation and dealing with the
+# complications of embedding Haddock markup inside cabal files, it is
+# common to point users to the README.md file.
+description:         Please see the README on GitHub at <https://github.com/SymphonyOfTranquility/Functional-programming>
+
+dependencies:
+- base >= 4.7 && < 5
+- containers == 0.6.2.1
+- random > 1.0
+- time == 1.9.3
+
+library:
+  source-dirs: src
+
+executables:
+  lab2-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N4
+    dependencies:
+    - lab2
+
+tests:
+  lab2-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N2
+    dependencies:
+    - lab2

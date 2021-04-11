@@ -11,6 +11,5 @@ docker-compose up
 ```
 2. Используя stack запустить приложение
 ```
-stack build
-stack app/Main.hs
+stack run
 ```

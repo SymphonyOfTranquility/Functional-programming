@@ -24,6 +24,11 @@ dependencies:
 - containers == 0.6.2.1
 - random > 1.0
 - time == 1.9.3
+- test-framework
+- test-framework-hunit
+- HUnit
+- containers
+- QuickCheck
 
 library:
   source-dirs: src
@@ -41,7 +46,7 @@ executables:
 
 tests:
   lab2-test:
-    main:                Spec.hs
+    main:                Tests.hs
     source-dirs:         test
     ghc-options:
     - -threaded

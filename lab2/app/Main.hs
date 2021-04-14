@@ -15,7 +15,7 @@ import Data.Time.Clock (diffUTCTime, getCurrentTime)
 
 main :: IO ()
 main = do
-  let size = 500    
+  let size = 300    
   putStrLn "Parallel"
   (mat1, vec1) <- generateRandom size
   start <- getCurrentTime
